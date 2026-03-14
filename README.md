@@ -48,7 +48,7 @@ A highly concurrent, resilient Go web crawler designed to discover "lost media" 
 
 ===================================================================
 [Observability] Prometheus metrics tracking throughput, latency, and errors
-
+```
 
 ## Technical Highlights
 
@@ -79,7 +79,6 @@ make run
 
 # 3. Check the status of the process
 make status
-
 ```
 
 ---
