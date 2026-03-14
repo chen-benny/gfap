@@ -1,4 +1,3 @@
-```markdown
 # gfap
 
 A highly concurrent, resilient Go web crawler designed to discover "lost media" on VidLii.com. It specifically targets videos uploaded before December 31, 2021, that contain Japanese (Hiragana/Katakana) or Chinese (Han) characters in their titles.
@@ -50,7 +49,6 @@ A highly concurrent, resilient Go web crawler designed to discover "lost media" 
 ===================================================================
 [Observability] Prometheus metrics tracking throughput, latency, and errors
 
-```
 
 ## Technical Highlights
 
