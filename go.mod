@@ -1,4 +1,4 @@
-module lost-media-finder
+module gfap
 
 go 1.25.7
 

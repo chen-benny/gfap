@@ -3,7 +3,7 @@ package storage
 import (
 	"context"
 
-	"lost-media-finder/internal/model"
+	"gfap/internal/model"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
