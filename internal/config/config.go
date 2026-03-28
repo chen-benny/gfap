@@ -3,9 +3,9 @@ package config
 import "time"
 
 type Config struct {
-	MaxVideos    int
-	Workers      int
-	BufferSize   int
+	Workers   int
+	QueueSize int
+
 	BaseUrl      string
 	TestUrl      string
 	VideoPattern string
@@ -14,9 +14,7 @@ type Config struct {
 	RateLimit    time.Duration
 	CutoffDate   time.Time
 
-	RedisAddr   string
-	RedisPrefix string
-	RedisTTL    time.Duration
+	RedisAddr string
 
 	MongoURI string
 	MongoDB  string
@@ -31,20 +29,17 @@ type Config struct {
 
 func Load() *Config {
 	return &Config{
-		MaxVideos:    100,
-		Workers:      30,
-		BufferSize:   1000000,
+		Workers:      10, // ~10 req/s in total
+		QueueSize:    10_000,
 		BaseUrl:      "https://www.vidlii.com",
 		TestUrl:      "https://www.vidlii.com/user/rinkomania",
 		VideoPattern: "/watch?v=",
 		TitleSuffix:  " - VidLii",
 		OutputFile:   "targets.json",
 		RateLimit:    1 * time.Second,
-		CutoffDate:   time.Date(2021, 12, 31, 23, 59, 59, 0, time.UTC),
+		CutoffDate:   time.Date(2022, 12, 31, 23, 59, 59, 0, time.UTC),
 
-		RedisAddr:   "localhost:6379",
-		RedisPrefix: "vidlii:",
-		RedisTTL:    24 * time.Hour,
+		RedisAddr: "localhost:6379",
 
 		MongoURI: "mongodb://localhost:27017",
 		MongoDB:  "vidlii",
