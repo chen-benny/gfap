@@ -1,61 +1,72 @@
-.PHONY: help docker stop logs build run test status restart clean
+METRICS_PORT = 2112
+BINARY = ./crawler
+
+.PHONY: help infra-start infra-stop infra-logs build start resume test stop metrics logs
 
 help:
-	@echo "VidLii Crawler - commands:"
-	@echo "  make docker      - Start Docker services (Redis/MongoDB/Prometheus)"
-	@echo "  make stop        - Stop all Docker services"
-	@echo "  make logs        - View Docker logs"
-	@echo "  make build       - Build crawler binary"
-	@echo "  make run         - Run crawler in background"
-	@echo "  make test        - Run crawler in test mode"
-	@echo "  make status      - Show service status"
-	@echo "  make restart     - Restart crawler"
-	@echo "  make clean       - Stop everything and remove data"
+	@echo "gfap — commands:"
+	@echo "  make infra-start  start Docker services (Redis/MongoDB/Prometheus)"
+	@echo "  make infra-stop   stop Docker services"
+	@echo "  make infra-logs   log Docker services"
+	@echo "  make build        build crawler binary"
+	@echo "  make start        first run — seed from seeds.txt"
+	@echo "  make resume       resume production crawl"
+	@echo "  make test         bounded test crawl"
+	@echo "  make stop         graceful crawler shutdown"
+	@echo "  make metrics      print Prometheus metrics"
+	@echo "  make logs         tail crawler log"
+	@echo "  make status       show service and crawler status"
+	@echo "  make restart      rebuild and restart crawler"
+	@echo "  make clean        stop everything and remove all data"
 
-docker:
+infra-start:
 	docker-compose up -d
-	@echo ""
-	@echo "Services started:"
-	@echo "  Prometheus: http://localhost:9090"
-	@echo "  Metrics:    http://localhost:2112/metrics"
+	@echo "Prometheus: http://localhost:9090"
+	@echo "Metrics: http://localhost:$(METRICS_PORT)/metrics"
 
-stop:
+infra-stop:
 	docker-compose down
 
-logs:
+infra-logs:
 	docker-compose logs -f
 
 build:
-	go build -o crawler cmd/crawler/main.go
-	@echo "Built: ./crawler"
+	go build -o $(BINARY) cmd/crawler/main.go
 
-run: build
-	-@pkill -x "crawler"
-	@nohup ./crawler > /dev/null 2>&1 & echo "Crawler started in background"
+start: build
+	-@pkill -x crawler
+	@nohup $(BINARY) -fresh > /dev/null 2>&1 & echo "Crawler started (fresh)"
+
+resume: build
+	-@pkill -x crawler
+	@nohup $(BINARY) > /dev/null 2>&1 & echo "Cralwer resumed"
 
 test:
-	go run cmd/crawler/main.go --test
+	go run cmd/crawler/main.go -test
 
-restart:
-	-@pkill -x "crawler"
-	@sleep 1
-	@nohup ./crawler > /dev/null 2>&1 &
-	@echo "Crawler restarted"
+stop:
+	curl -s -X POST http://localhost:$(METRICS_PORT)/stop
+
+metrics:
+	curl -s http://localhost:2112/metrics
+
+logs:
+	tail -f crawler.log
 
 status:
-	@echo "=== Docker Services ==="
 	@docker-compose ps
 	@echo ""
-	@echo "=== Crawler Status ==="
-	@pgrep -x "crawler" > /dev/null && echo "Crawler: Running (PID: $$(pgrep -x "crawler"))" || echo "Crawler: Not running"
-	@echo ""
-	@echo "=== Metrics ==="
-	@curl -s http://localhost:2112/metrics | grep "crawler_" | head -5 || echo "Metrics not available"
+	@pgrep -x crawler > /dev/null \
+		&& echo "Crawler: running (PID $$(pgrep -x crawler))" \
+		|| echo "Crawler: not running"
+
+restart: build
+	-@pkill -x crawler
+	@sleep 1
+	@nohup $(BINARY) > /dev/null 2>&1 & echo "Crawler restarted"
 
 clean:
-	@echo "WARNING: This will delete all data!"
-	-@pkill -f "./crawler"
-	-docker exec lost-media-finder-redis-1 redis-cli FLUSHALL
+	@echo "WARNING: deletes all data"
+	-@pkill -x crawler
+	-docker exec gfap-redis-1 redis-cli FLUSHALL
 	docker-compose down -v
-	rm -f crawler.log targets.json
-	@echo "All data deleted"

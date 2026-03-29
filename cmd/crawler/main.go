@@ -1,19 +1,21 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"gfap/internal/metrics"
 	"log"
 	"os"
 
-	"lost-media-finder/internal/config"
-	"lost-media-finder/internal/crawler"
-	"lost-media-finder/internal/metrics"
-	"lost-media-finder/internal/storage"
+	"gfap/internal/config"
+	"gfap/internal/crawler"
+	"gfap/internal/storage"
 )
 
 func main() {
-	testMode := flag.Bool("test", false, "run tests with test url and max video limit")
+	testMode := flag.Bool("test", false, "run bounded test crawl")
+	freshMode := flag.Bool("fresh", false, "first run: seed from seeds.txt")
 	flag.Parse()
 
 	cfg := config.Load()
@@ -31,30 +33,39 @@ func main() {
 	}
 	defer redis.Close()
 
+	if err := redis.BloomInit(context.Background()); err != nil {
+		log.Fatalf("bloom init failed: %v", err)
+	}
+
 	mongo, err := storage.NewMongo(cfg.MongoURI, cfg.MongoDB, cfg.MongoCol)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer mongo.Close()
 
-	go metrics.Serve(cfg.MetricsPort)
-
 	c := crawler.New(cfg, redis, mongo)
+	go metrics.Serve(cfg.MetricsPort, c.Stop)
+
 	if *testMode {
 		log.Println("[INFO] Running in test mode")
 		c.Clear()
+		if err := redis.BloomInit(context.Background()); err != nil { // Bloom need after Clear()
+			log.Fatalf("[ERROR] Bloom init failed: %v\n", err)
+		}
 		c.RunTest(cfg.TestUrl)
+		if err := c.SaveTest(); err != nil {
+			log.Printf("[ERROR] Failed to save crawler data: %v", err)
+		}
+		res := fmt.Sprintf("Visited %d videos, target %d\n", c.Count(), c.TargetCount())
+		log.Print(res)
+		fmt.Print(res)
 	} else {
 		log.Println("[INFO] Running in production mode")
 		c.Resume()
+		if *freshMode {
+			c.Seed("seeds.txt")
+		}
 		c.Run(cfg.BaseUrl)
 	}
 
-	if err := c.Save(); err != nil {
-		log.Printf("Error saving: %s", err)
-	}
-
-	result := fmt.Sprintf("Visited %d videos, targets %d\n", c.Count(), c.TargetCount())
-	log.Println(result)
-	fmt.Printf(result)
 }

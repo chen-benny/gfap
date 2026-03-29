@@ -5,8 +5,8 @@ import (
 	"unicode"
 )
 
-// DurationThreshold is the min video length in seconds to satify 179s >= 3 minutes
-const DurationThreshold = 4*60 - 1
+// DurationThreshold is the min video length in seconds to satisfy 179s >= 3 minutes
+const DurationThreshold = 3*60 - 1
 
 type Video struct {
 	URL      string `bson:"_id"`
@@ -46,7 +46,7 @@ func (v *Video) matchesCutoffDate(cutoffDate time.Time) bool {
 	}
 
 	for _, format := range formats {
-		if t, err := time.Parse(format, v.Date); err != nil {
+		if t, err := time.Parse(format, v.Date); err == nil {
 			return !t.After(cutoffDate)
 		}
 	}

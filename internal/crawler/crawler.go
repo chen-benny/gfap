@@ -24,7 +24,7 @@ import (
 const (
 	idleTimeout   = time.Minute * 10
 	maxRetries    = 3
-	maxTestVideos = 100 // test mode only
+	maxTestVideos = 30 // test mode only
 )
 
 type Crawler struct {
@@ -43,7 +43,7 @@ type Crawler struct {
 	stopOnce sync.Once
 
 	// test only
-	wg sync.WaitGroup
+	debug bool
 }
 
 func New(cfg *config.Config, redis *storage.Redis, mongo *storage.Mongo) *Crawler {
@@ -108,14 +108,6 @@ func (c *Crawler) process(url string) {
 	ctx := context.Background()
 	var err error // err is re-used
 
-	if url != c.cfg.BaseUrl { // BaseUrl is used in re-seeding when exhaust queue
-		var added bool
-		added, err = c.redis.BloomAdd(ctx, url)
-		if err != nil || !added {
-			return
-		}
-	}
-
 	var resp *http.Response
 	var doc *goquery.Document
 
@@ -124,13 +116,20 @@ func (c *Crawler) process(url string) {
 		resp, err = c.client.Get(url)
 		metrics.FetchDuration.Observe(time.Since(start).Seconds())
 		if err == nil {
+			if resp.StatusCode != http.StatusOK {
+				resp.Body.Close()
+				if strings.Contains(url, c.cfg.VideoPattern) {
+					log.Printf("[WARN] %s returned %s, requeueing\n", url, resp.StatusCode)
+					c.redis.PushOverflow(ctx, url)
+				}
+				return
+			}
 			doc, err = goquery.NewDocumentFromReader(resp.Body)
 			resp.Body.Close()
 			if err == nil {
 				break
 			}
 		}
-
 		if try < maxRetries {
 			log.Printf("[WARN] Retry %d/%d for %s: %v\n", try, maxRetries, url, err)
 			time.Sleep(time.Duration(try) * time.Second)
@@ -141,6 +140,15 @@ func (c *Crawler) process(url string) {
 		metrics.Errors.Inc()
 		log.Printf("[ERROR] Failed to add url %s: %v\n", url, err)
 		return
+	}
+
+	// bloom add only after confirmed good response
+	if url != c.cfg.BaseUrl { // BaseUrl is used in re-seeding when exhaust queue
+		var added bool
+		added, err = c.redis.BloomAdd(ctx, url)
+		if err != nil || !added {
+			return
+		}
 	}
 
 	metrics.PagesProcessed.Inc()
@@ -157,6 +165,11 @@ func (c *Crawler) process(url string) {
 		date := strings.TrimSpace(doc.Find("date").First().Text())
 		durStr := doc.Find(`meta[property="video:duration"]`).AttrOr("content", "")
 		dur, _ := strconv.Atoi(durStr)
+
+		// debug
+		if c.debug {
+			log.Printf("[DEBUG] url=%s title=%s date=%s dur=%d", url, title, date, dur)
+		}
 
 		v := model.Video{URL: url, Title: title, Date: date, Duration: dur}
 		v.Match(c.cfg.CutoffDate)
@@ -215,22 +228,6 @@ func (c *Crawler) Resume() {
 	log.Printf("[INFO] Resumed %d videos, %d targets\n", c.count, len(c.targets))
 }
 
-func (c *Crawler) Save() error {
-	ctx := context.Background()
-	targets, err := c.mongo.FindTargets(ctx)
-	if err != nil {
-		return err
-	}
-	f, err := os.Create(c.cfg.OutputFile)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	enc := json.NewEncoder(f)
-	enc.SetIndent("", "  ")
-	return enc.Encode(targets)
-}
-
 func (c *Crawler) Clear() {
 	ctx := context.Background()
 	c.mongo.Drop(ctx)
@@ -287,6 +284,23 @@ func (c *Crawler) Run(url string) {
 	log.Printf("[INFO] Crawler stopped - %d videos, %d targets\n", c.Count(), c.TargetCount())
 }
 
+func (c *Crawler) Seed(path string) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		log.Printf("[WARN] Crawler seeding failed: %v\n", err)
+		return
+	}
+	count := 0
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			c.enqueue(line)
+			count++
+		}
+	}
+	log.Printf("[INFO] seeded %d URLs from %s\n", count, path)
+}
+
 // --- test only ---
 
 func (c *Crawler) workerTest() {
@@ -298,19 +312,16 @@ func (c *Crawler) workerTest() {
 		}
 		c.inFlight.Add(-1)
 		metrics.QueueSize.Set(float64(c.inFlight.Load()))
-		c.wg.Done()
 	}
 }
 
 func (c *Crawler) enqueueTest(url string) {
-	c.wg.Add(1)
 	c.inFlight.Add(1)
 	metrics.QueueSize.Set(float64(c.inFlight.Load()))
 	select {
 	case c.queue <- url:
 	default:
 		if err := c.redis.PushOverflow(context.Background(), url); err != nil {
-			c.wg.Done()
 			c.inFlight.Add(-1)
 			metrics.QueueSize.Set(float64(c.inFlight.Load()))
 		}
@@ -318,14 +329,33 @@ func (c *Crawler) enqueueTest(url string) {
 }
 
 func (c *Crawler) RunTest(url string) {
+	c.debug = true
 	ctx, cancel := context.WithCancel(context.Background())
 	go c.drainOverflow(ctx)
 	for i := 0; i < c.cfg.Workers; i++ {
 		go c.workerTest()
 	}
-	c.enqueueTest(url)
-	c.wg.Wait()
+	c.enqueue(url)
+	for c.inFlight.Load() > 0 { // wait until nothing is in-flight
+		time.Sleep(100 * time.Millisecond)
+	}
 	cancel()
 	close(c.queue)
 	log.Printf("[INFO] Test finished - %d videos, %d targets\n", c.Count(), c.TargetCount())
+}
+
+func (c *Crawler) SaveTest() error {
+	ctx := context.Background()
+	targets, err := c.mongo.FindTargets(ctx)
+	if err != nil {
+		return err
+	}
+	f, err := os.Create(c.cfg.OutputFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	enc := json.NewEncoder(f)
+	enc.SetIndent("", "  ")
+	return enc.Encode(targets)
 }

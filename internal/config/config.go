@@ -29,14 +29,14 @@ type Config struct {
 
 func Load() *Config {
 	return &Config{
-		Workers:      10, // ~10 req/s in total
+		Workers:      5, // ~1 req/s in total
 		QueueSize:    10_000,
 		BaseUrl:      "https://www.vidlii.com",
 		TestUrl:      "https://www.vidlii.com/user/rinkomania",
 		VideoPattern: "/watch?v=",
 		TitleSuffix:  " - VidLii",
 		OutputFile:   "targets.json",
-		RateLimit:    1 * time.Second,
+		RateLimit:    5 * time.Second,
 		CutoffDate:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
 
 		RedisAddr: "localhost:6379",
