@@ -1,84 +1,89 @@
 # gfap
 
-A highly concurrent, resilient Go web crawler designed to discover "lost media" on VidLii.com. It specifically targets videos uploaded before December 31, 2021, that contain Japanese (Hiragana/Katakana) or Chinese (Han) characters in their titles.
+A continuous, self-re-seeding Go web crawler for discovering lost media on VidLii.com. Targets videos uploaded before December 31, 2021 with CJK (Han/Hiragana/Katakana/Hangul) characters in their titles and duration over 3 minutes.
 
 ## Architecture
 
 ```text
-[Start] Seed URL or MongoDB Resume (Historical state)
+[Start] seeds.txt (fresh) or MongoDB Resume
       │
       ▼
 ┌─────────────────────────────────────────────────────────┐
 │                 URL Management & Queue                  │
 │                                                         │
-│   ┌────────────────┐ (Overflow push)┌─────────────────┐   │
-│   │ Memory Channel │ ─────────────► │   Redis List    │   │
-│   │   (c.queue)    │ ◄───────────── │(Overflow Buffer)│   │
-│   └───────┬────────┘ (Drain back)   └─────────────────┘   │
+│   ┌────────────────┐ (overflow push) ┌────────────────┐ │
+│   │ Memory Channel │ ──────────────► │   Redis List   │ │
+│   │   (c.queue)    │ ◄────────────── │crawler:overflow│ │
+│   └───────┬────────┘  (drain back)   └────────────────┘ │
 └───────────┼─────────────────────────────────────────────┘
-            │ 
+            │
             ▼ Dequeue URL
 ┌─────────────────────────────────────────────────────────┐
 │                 Worker Pool (Goroutines)                │
 │                                                         │
 │   1. Rate Limiter (golang.org/x/time/rate)              │
 │            │                                            │
-│   2. Deduplication (Redis SETNX w/ TTL)                 │
+│   2. HTTP Fetch + status check (linear backoff)         │
 │            │                                            │
-│   3. HTTP Fetcher (Linear backoff retries)              │
-│            │                                            │
+│   3. Bloom Filter de-dup (Redis BF.ADD)                 │
+│            │  baseURL bypasses filter                   │
 │   4. HTML Parser (goquery)                              │
 └──────┬──────────────────────────────────────────┬───────┘
        │                                          │
-       ▼ (Extracted New URLs)                     ▼ (Video Metadata)
-[Push back to Queue]                 ┌───────────────────────┐
-                                     │   Logic & Matching    │
-                                     │                       │
-                                     │ 1. Cutoff Date Check  │
-                                     │ 2. Unicode Char Check │
-                                     └───────────┬───────────┘
-                                                 │ (If target)
-                                                 ▼ 
-                                     ┌───────────────────────┐
-                                     │      Persistence      │
-                                     │                       │
-                                     │ 1. Upsert to MongoDB  │
-                                     │ 2. Export targets.json│
-                                     └───────────────────────┘
+       ▼ (extracted links)              ▼ (video metadata)
+[Push back to Queue]        ┌───────────────────────────┐
+                            │   Three-condition match   │
+                            │                           │
+                            │ 1. MatchDate  (pre-2022)  │
+                            │ 2. HasCJKChar (title)     │
+                            │ 3. MatchDuration (>3 min) │
+                            │ + HasNonEnglishChar (meta)│
+                            └────────────┬──────────────┘
+                                         │
+                                         ▼
+                            ┌───────────────────────────┐
+                            │        Persistence        │
+                            │                           │
+                            │ Upsert all videos         │
+                            │ (all flags stored)        │
+                            └───────────────────────────┘
 
-===================================================================
-[Observability] Prometheus metrics tracking throughput, latency, and errors
+[Idle Monitor] queue exhausted → re-seed baseURL every 10 min → crawl indefinitely
+[Observability] Prometheus: pages_processed, video_found, targets_found, queue_size, errors
 ```
 
 ## Technical Highlights
 
-* **Elastic Queueing (Memory + Redis):** Implements a hybrid channel design. A primary buffered Go channel handles fast, in-memory URL distribution. When the channel hits capacity, an overflow mechanism seamlessly pushes excess URLs to a Redis List (`crawler:overflow`) and drains them back in the background, preventing OOM crashes during massive link explosions.
-* **State Recovery & Resume:** Utilizes MongoDB to persist scraped video metadata via `Upsert` operations. On startup, `crawler.Resume()` automatically restores the historical state, reinjecting known URLs into the Redis deduplication cache and preventing redundant scraping after restarts or crashes.
-* **Fault Tolerance & Linear Backoff:** The HTTP client features a robust retry mechanism. Failed fetches are retried up to 3 times with a linear backoff (`time.Sleep(attempt * second)`), ensuring temporary network blips or rate-limit rejections don't drop target URLs.
-* **High-Performance Unicode Matching:** Replaces standard regex or string indexing with direct rune iteration (`unicode.In`) to efficiently detect target language character sets in video titles.
-* **Distributed Deduplication:** Uses Redis `SETNX` with a configurable TTL (default 24h) to maintain a lightweight, distributed cache of visited URLs, bypassing the need to query the primary database for every link check.
+* **Bloom Filter De-duplication:** Replaces per-URL Redis `SetNX` keys (~20GB at scale) with a single Bloom filter (`crawler:bloom`, 100M capacity, 0.1% FPR, ~120MB). Pipeline-batched `BF.ADD` re-seeds the filter from MongoDB on restart without loading the full corpus into memory.
+* **Elastic Overflow Queue:** A buffered Go channel handles in-memory URL distribution. When full, excess URLs push to a Redis List (`crawler:overflow`) and drain back in the background — preventing OOM during link explosions. Diagnosed a 1.1M-goroutine leak via Prometheus and redesigned this path, reducing memory from 4GB to 192MB.
+* **Fetch-before-Bloom Ordering:** HTTP status is checked before `BF.ADD`. Non-200 video pages push to overflow without entering the filter — ensuring retryability without a `BF.REMOVE` operation.
+* **Three-condition Targeting:** Per-video match flags (`match_date`, `has_cjk_char`, `match_duration`, `has_non_english_char`) stored independently in MongoDB for flexible querying. `IsTarget = MatchDate && HasCJKChar && MatchDuration`.
+* **Continuous Self-re-seeding:** The base URL bypasses Bloom filter de-dup so `idleMonitor` re-discovers new links every 10 minutes as VidLii adds content, without manual restarts.
+* **Fault Tolerance:** Failed fetches retry up to 3 times with linear backoff. Rate-limited responses (429/503) back off before retry and are never entered into the Bloom filter.
 
 ---
 
 ## Requirements
 
 * **Go:** 1.25+
-* **Environment:** Docker & Docker Compose
-* **Hardware:** 2GB RAM minimum
+* **Docker & Docker Compose**
+* **RAM:** 512MB minimum (Bloom filter ~120MB, crawler ~25MB RSS)
 
 ---
 
 ## Quick Start
 
 ```bash
-# 1. Start backend services (Redis, MongoDB, Prometheus)
-make docker
+# 1. Start backend services (Redis Stack, MongoDB, Prometheus)
+make infra-start
 
-# 2. Build and run the crawler in the background
-make run
+# 2. First run — seed from seeds.txt (25 known URLs)
+make start
 
-# 3. Check the status of the process
+# 3. Monitor
 make status
+make logs
+make metrics
 ```
 
 ---
@@ -87,77 +92,62 @@ make status
 
 | Command | Description |
 | --- | --- |
-| `make docker` | Start Redis, MongoDB, and Prometheus containers. |
-| `make stop` | Stop all Docker services. |
-| `make logs` | View logs from the Docker containers. |
-| `make build` | Compile the crawler binary. |
-| `make run` | Execute the crawler in the background. |
-| `make test` | Run in test mode (limits to a specific test URL and max 100 videos). |
-| `make status` | Display the current service status. |
-| `make restart` | Restart the crawler process. |
-| `make clean` | Delete all generated data, logs, and binaries. |
+| `make infra-start` | Start Redis Stack, MongoDB, and Prometheus containers |
+| `make infra-stop` | Stop Docker services |
+| `make infra-logs` | View Docker container logs |
+| `make build` | Compile the crawler binary |
+| `make start` | First run — clear state and seed from seeds.txt |
+| `make resume` | Resume production crawl from last checkpoint |
+| `make test` | Bounded test crawl (100 videos, test URL) |
+| `make stop` | Graceful crawler shutdown via HTTP |
+| `make metrics` | Print live Prometheus metrics |
+| `make logs` | Tail crawler.log |
+| `make status` | Show Docker and crawler process status |
+| `make restart` | Rebuild and restart crawler |
+| `make clean` | Delete all data, logs, and volumes |
 
 ---
 
 ## Project Structure
 
 ```text
-cmd/crawler/        - Entry point (main.go)
+cmd/crawler/        — entry point (main.go)
 internal/
-  ├── config/       - Environment and crawler configuration
-  ├── crawler/      - Core crawling logic, worker pool, and queue management
-  ├── storage/      - Redis (dedup/overflow) & MongoDB (persistence) clients
-  ├── metrics/      - Prometheus instrumentation
-  ├── model/        - Data models and Unicode matching logic
-  └── auth/         - HTTP client with cookie jar and login capabilities
-
+  ├── config/       — crawler configuration
+  ├── crawler/      — worker pool, queue, idle monitor, bloom de-dup
+  ├── storage/      — Redis (Bloom + overflow) & MongoDB clients
+  ├── metrics/      — Prometheus instrumentation + /stop endpoint
+  ├── model/        — Video struct, match flags, CJK/non-Latin detection
+  └── auth/         — HTTP client with cookie jar
+seeds.txt           — 25 known VidLii URLs for cold start
 ```
 
 ---
 
-## Monitoring & Observability
+## Monitoring
 
-The application exposes real-time metrics for monitoring throughput, queue sizes, and error rates natively via Prometheus.
+* **Prometheus:** `http://localhost:9090`
+* **Raw metrics:** `http://localhost:2112/metrics`
 
-* **Prometheus Dashboard:** `http://localhost:9090`
-* **Raw Metrics Endpoint:** `http://localhost:2112/metrics`
+Key metrics: `pages_processed`, `video_found`, `targets_found`, `queue_size`, `fetch_duration_seconds`, `errors`
 
 ---
 
-## VPS Deployment Guide
+## VPS Deployment
 
-### 1. Install System Dependencies
-
-**For Debian/Ubuntu (apt):**
-
+**Debian/Ubuntu:**
 ```bash
-sudo apt update
-sudo apt install -y docker.io docker-compose golang-go git make
-
+sudo apt update && sudo apt install -y docker.io docker-compose golang-go git make
 ```
 
-**For RHEL/CentOS/Fedora/Rocky/Alma (dnf):**
-
+**RHEL/Fedora:**
 ```bash
-sudo dnf update -y
 sudo dnf install -y docker docker-compose golang git make
 sudo systemctl enable --now docker
-
 ```
 
-### 2. Clone and Deploy
-
 ```bash
-# Clone the repository
-git clone [https://github.com/chen-benny/gfap.git](https://github.com/chen-benny/gfap.git)
-cd gfap
-
-# Deploy infrastructure and start crawling
-make docker
-make run
-
-# Monitor the process
-make status
-tail -f crawler.log
-
+git clone https://github.com/chen-benny/gfap.git && cd gfap
+make infra-start
+make start
 ```
