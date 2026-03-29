@@ -119,8 +119,10 @@ func (c *Crawler) process(url string) {
 			if resp.StatusCode != http.StatusOK {
 				resp.Body.Close()
 				if strings.Contains(url, c.cfg.VideoPattern) {
-					log.Printf("[WARN] %s returned %s, requeueing\n", url, resp.StatusCode)
-					c.redis.PushOverflow(ctx, url)
+					backoff := time.Duration(try) * 10 * time.Second
+					log.Printf("[WARN] %s returned %d, backing off %s\n", url, resp.StatusCode, backoff)
+					time.Sleep(backoff)
+					continue
 				}
 				return
 			}
@@ -130,10 +132,18 @@ func (c *Crawler) process(url string) {
 				break
 			}
 		}
+
 		if try < maxRetries {
 			log.Printf("[WARN] Retry %d/%d for %s: %v\n", try, maxRetries, url, err)
 			time.Sleep(time.Duration(try) * time.Second)
 		}
+	}
+
+	if doc == nil {
+		if strings.Contains(url, c.cfg.VideoPattern) {
+			c.redis.PushOverflow(ctx, url)
+		}
+		return
 	}
 
 	if err != nil {
@@ -155,6 +165,10 @@ func (c *Crawler) process(url string) {
 
 	if strings.Contains(url, c.cfg.VideoPattern) {
 		idx := strings.Index(url, c.cfg.VideoPattern)
+		videoID := url[idx+len(c.cfg.VideoPattern):]
+		if videoID == "" {
+			return
+		}
 		url = c.cfg.BaseUrl + url[idx:]
 
 		c.mu.Lock()
@@ -312,19 +326,6 @@ func (c *Crawler) workerTest() {
 		}
 		c.inFlight.Add(-1)
 		metrics.QueueSize.Set(float64(c.inFlight.Load()))
-	}
-}
-
-func (c *Crawler) enqueueTest(url string) {
-	c.inFlight.Add(1)
-	metrics.QueueSize.Set(float64(c.inFlight.Load()))
-	select {
-	case c.queue <- url:
-	default:
-		if err := c.redis.PushOverflow(context.Background(), url); err != nil {
-			c.inFlight.Add(-1)
-			metrics.QueueSize.Set(float64(c.inFlight.Load()))
-		}
 	}
 }
 
