@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"gfap/internal/metrics"
+	"io"
 	"log"
 	"os"
 
@@ -44,9 +45,15 @@ func main() {
 	defer mongo.Close()
 
 	c := crawler.New(cfg, redis, mongo)
+	if err := c.Login(); err != nil {
+		log.Fatalf("[FATAL] login failed: %v", err)
+	}
+	log.Println("[INFO] Logged in successfully")
+
 	go metrics.Serve(cfg.MetricsPort, c.Stop)
 
 	if *testMode {
+		log.SetOutput(io.MultiWriter(logFile, os.Stdout))
 		log.Println("[INFO] Running in test mode")
 		c.Clear()
 		if err := redis.BloomInit(context.Background()); err != nil { // Bloom need after Clear()
@@ -60,6 +67,7 @@ func main() {
 		log.Print(res)
 		fmt.Print(res)
 	} else {
+		log.SetOutput(logFile)
 		log.Println("[INFO] Running in production mode")
 		c.Resume()
 		if *freshMode {

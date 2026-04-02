@@ -24,7 +24,7 @@ import (
 const (
 	idleTimeout   = time.Minute * 10
 	maxRetries    = 3
-	maxTestVideos = 30 // test mode only
+	maxTestVideos = 20 // test mode only
 )
 
 type Crawler struct {
@@ -129,6 +129,12 @@ func (c *Crawler) process(url string) {
 			doc, err = goquery.NewDocumentFromReader(resp.Body)
 			resp.Body.Close()
 			if err == nil {
+				if strings.Contains(doc.Find("title").Text(), "Rate Limited") {
+					backoff := time.Duration(try) * 10 * time.Second
+					log.Printf("[WARN] Rate limited on %s, backing off %s\n", url, backoff)
+					time.Sleep(backoff)
+					continue
+				}
 				break
 			}
 		}
@@ -289,7 +295,11 @@ func (c *Crawler) Run(url string) {
 	go c.drainOverflow(ctx)
 	go c.idleMonitor(ctx, url)
 	for i := 0; i < c.cfg.Workers; i++ {
-		go c.worker()
+		go func(workerId int) {
+			offset := time.Duration(workerId) * c.cfg.RateLimit / time.Duration(c.cfg.Workers)
+			time.Sleep(offset)
+			c.worker()
+		}(i)
 	}
 	c.enqueue(url)
 	<-c.stopChan
@@ -315,6 +325,10 @@ func (c *Crawler) Seed(path string) {
 	log.Printf("[INFO] seeded %d URLs from %s\n", count, path)
 }
 
+func (c *Crawler) Login() error {
+	return c.client.Login(c.cfg.LoginURL, c.cfg.Username, c.cfg.Password)
+}
+
 // --- test only ---
 
 func (c *Crawler) workerTest() {
@@ -334,7 +348,11 @@ func (c *Crawler) RunTest(url string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	go c.drainOverflow(ctx)
 	for i := 0; i < c.cfg.Workers; i++ {
-		go c.workerTest()
+		go func(workerId int) {
+			offset := time.Duration(workerId) * c.cfg.RateLimit / time.Duration(c.cfg.Workers)
+			time.Sleep(offset)
+			c.workerTest()
+		}(i)
 	}
 	c.enqueue(url)
 	for c.inFlight.Load() > 0 { // wait until nothing is in-flight
