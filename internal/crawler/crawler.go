@@ -39,8 +39,10 @@ type Crawler struct {
 	inFlight atomic.Int64
 
 	// production only
-	stopChan chan struct{}
-	stopOnce sync.Once
+	stopChan   chan struct{}
+	stopOnce   sync.Once
+	rateMu     sync.Mutex
+	retryAfter time.Time
 
 	// test only
 	debug bool
@@ -111,6 +113,13 @@ func (c *Crawler) process(url string) {
 	var resp *http.Response
 	var doc *goquery.Document
 
+	c.rateMu.Lock()
+	wait := time.Until(c.retryAfter)
+	c.rateMu.Unlock()
+	if wait > 0 {
+		time.Sleep(wait)
+	}
+
 	for try := 1; try <= maxRetries; try++ {
 		start := time.Now()
 		resp, err = c.client.Get(url)
@@ -119,8 +128,11 @@ func (c *Crawler) process(url string) {
 			if resp.StatusCode != http.StatusOK {
 				resp.Body.Close()
 				if strings.Contains(url, c.cfg.VideoPattern) {
-					backoff := time.Duration(try) * 10 * time.Second
+					backoff := time.Duration(try) * 30 * time.Second
 					log.Printf("[WARN] %s returned %d, backing off %s\n", url, resp.StatusCode, backoff)
+					c.rateMu.Lock()
+					c.retryAfter = time.Now().Add(backoff)
+					c.rateMu.Unlock()
 					time.Sleep(backoff)
 					continue
 				}
@@ -130,8 +142,11 @@ func (c *Crawler) process(url string) {
 			resp.Body.Close()
 			if err == nil {
 				if strings.Contains(doc.Find("title").Text(), "Rate Limited") {
-					backoff := time.Duration(try) * 10 * time.Second
+					backoff := time.Duration(try) * 30 * time.Second
 					log.Printf("[WARN] Rate limited on %s, backing off %s\n", url, backoff)
+					c.rateMu.Lock()
+					c.retryAfter = time.Now().Add(backoff)
+					c.rateMu.Unlock()
 					time.Sleep(backoff)
 					continue
 				}

@@ -36,7 +36,7 @@ func Load() *Config {
 		VideoPattern: "/watch?v=",
 		TitleSuffix:  " - VidLii",
 		OutputFile:   "targets.json",
-		RateLimit:    8 * time.Second,
+		RateLimit:    10 * time.Second,
 		CutoffDate:   time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC),
 
 		RedisAddr: "localhost:6379",
