@@ -26,17 +26,18 @@ func main() {
 		log.Fatalf("error opening file: %v", err)
 	}
 	defer logFile.Close()
-	log.SetOutput(logFile)
+
+	if *testMode {
+		log.SetOutput(io.MultiWriter(os.Stdout, logFile))
+	} else {
+		log.SetOutput(logFile)
+	}
 
 	redis, err := storage.NewRedis(cfg.RedisAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer redis.Close()
-
-	if err := redis.BloomInit(context.Background()); err != nil {
-		log.Fatalf("bloom init failed: %v", err)
-	}
 
 	mongo, err := storage.NewMongo(cfg.MongoURI, cfg.MongoDB, cfg.MongoCol)
 	if err != nil {
@@ -45,17 +46,15 @@ func main() {
 	defer mongo.Close()
 
 	c := crawler.New(cfg, redis, mongo)
+	go metrics.Serve(cfg.MetricsPort, c.Stop)
 	if err := c.Login(); err != nil {
 		log.Fatalf("[FATAL] login failed: %v", err)
 	}
 	log.Println("[INFO] Logged in successfully")
 
-	go metrics.Serve(cfg.MetricsPort, c.Stop)
-
 	if *testMode {
-		log.SetOutput(io.MultiWriter(logFile, os.Stdout))
 		log.Println("[INFO] Running in test mode")
-		c.Clear()
+		c.InitTest()
 		if err := redis.BloomInit(context.Background()); err != nil { // Bloom need after Clear()
 			log.Fatalf("[ERROR] Bloom init failed: %v\n", err)
 		}
@@ -67,7 +66,9 @@ func main() {
 		log.Print(res)
 		fmt.Print(res)
 	} else {
-		log.SetOutput(logFile)
+		if err := redis.BloomInit(context.Background()); err != nil {
+			log.Fatalf("[ERROR] Bloom init failed: %v\n", err)
+		}
 		log.Println("[INFO] Running in production mode")
 		c.Resume()
 		if *freshMode {
@@ -75,5 +76,4 @@ func main() {
 		}
 		c.Run(cfg.BaseUrl)
 	}
-
 }

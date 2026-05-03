@@ -21,17 +21,25 @@ import (
 	"golang.org/x/time/rate"
 )
 
+type processResult int
+
 const (
 	idleTimeout   = time.Minute * 10
 	maxRetries    = 3
-	maxTestVideos = 20 // test mode only
+	maxTestVideos = 100 // test mode only
+)
+
+const (
+	resultOK processResult = iota
+	resultRateLimited
+	resultSkipped
 )
 
 type Crawler struct {
 	cfg      *config.Config
 	redis    *storage.Redis
 	mongo    *storage.Mongo
-	client   *auth.Client
+	jar      http.CookieJar // shared across all workers
 	targets  []model.Video
 	mu       sync.Mutex
 	count    int
@@ -53,7 +61,7 @@ func New(cfg *config.Config, redis *storage.Redis, mongo *storage.Mongo) *Crawle
 		cfg:      cfg,
 		redis:    redis,
 		mongo:    mongo,
-		client:   auth.NewClient(),
+		jar:      auth.NewJar(),
 		queue:    make(chan string, cfg.QueueSize),
 		stopChan: make(chan struct{}),
 	}
@@ -106,49 +114,42 @@ func (c *Crawler) drainOverflow(ctx context.Context) {
 	}
 }
 
-func (c *Crawler) process(url string) {
+func (c *Crawler) process(workerId int, url string, client *auth.Client) processResult {
 	ctx := context.Background()
 	var err error // err is re-used
 
 	var resp *http.Response
 	var doc *goquery.Document
 
-	c.rateMu.Lock()
-	wait := time.Until(c.retryAfter)
-	c.rateMu.Unlock()
-	if wait > 0 {
-		time.Sleep(wait)
-	}
-
 	for try := 1; try <= maxRetries; try++ {
 		start := time.Now()
-		resp, err = c.client.Get(url)
+		resp, err = client.Get(url)
 		metrics.FetchDuration.Observe(time.Since(start).Seconds())
 		if err == nil {
 			if resp.StatusCode != http.StatusOK {
 				resp.Body.Close()
 				if strings.Contains(url, c.cfg.VideoPattern) {
 					backoff := time.Duration(try) * 30 * time.Second
-					log.Printf("[WARN] %s returned %d, backing off %s\n", url, resp.StatusCode, backoff)
+					log.Printf("[WARN] Worker-%d: %s returned %d, backing off %s\n", workerId, url, resp.StatusCode, backoff)
 					c.rateMu.Lock()
 					c.retryAfter = time.Now().Add(backoff)
 					c.rateMu.Unlock()
 					time.Sleep(backoff)
 					continue
 				}
-				return
+				return resultSkipped
 			}
 			doc, err = goquery.NewDocumentFromReader(resp.Body)
 			resp.Body.Close()
 			if err == nil {
 				if strings.Contains(doc.Find("title").Text(), "Rate Limited") {
 					backoff := time.Duration(try) * 30 * time.Second
-					log.Printf("[WARN] Rate limited on %s, backing off %s\n", url, backoff)
+					log.Printf("[WARN] Worker-%d: Rate limited on %s, backing off %s\n", workerId, url, backoff)
 					c.rateMu.Lock()
 					c.retryAfter = time.Now().Add(backoff)
 					c.rateMu.Unlock()
 					time.Sleep(backoff)
-					continue
+					return resultRateLimited
 				}
 				break
 			}
@@ -164,13 +165,13 @@ func (c *Crawler) process(url string) {
 		if strings.Contains(url, c.cfg.VideoPattern) {
 			c.redis.PushOverflow(ctx, url)
 		}
-		return
+		return resultSkipped
 	}
 
 	if err != nil {
 		metrics.Errors.Inc()
 		log.Printf("[ERROR] Failed to add url %s: %v\n", url, err)
-		return
+		return resultSkipped
 	}
 
 	// bloom add only after confirmed good response
@@ -178,7 +179,7 @@ func (c *Crawler) process(url string) {
 		var added bool
 		added, err = c.redis.BloomAdd(ctx, url)
 		if err != nil || !added {
-			return
+			return resultSkipped
 		}
 	}
 
@@ -188,7 +189,7 @@ func (c *Crawler) process(url string) {
 		idx := strings.Index(url, c.cfg.VideoPattern)
 		videoID := url[idx+len(c.cfg.VideoPattern):]
 		if videoID == "" {
-			return
+			return resultSkipped
 		}
 		url = c.cfg.BaseUrl + url[idx:]
 
@@ -203,7 +204,7 @@ func (c *Crawler) process(url string) {
 
 		// debug
 		if c.debug {
-			log.Printf("[DEBUG] url=%s title=%s date=%s dur=%d", url, title, date, dur)
+			log.Printf("[DEBUG] workerId=%d url=%s title=%s date=%s dur=%d", workerId, url, title, date, dur)
 		}
 
 		v := model.Video{URL: url, Title: title, Date: date, Duration: dur}
@@ -230,6 +231,8 @@ func (c *Crawler) process(url string) {
 			c.enqueue(href)
 		}
 	})
+
+	return resultOK
 }
 
 func (c *Crawler) Resume() {
@@ -272,11 +275,30 @@ func (c *Crawler) Clear() {
 
 // --- production only ---
 
-func (c *Crawler) worker() {
+func (c *Crawler) worker(workerId int, staticProxyURL string) {
+	client := auth.NewClient(c.jar, staticProxyURL)
+	consecFails := 0
 	limiter := rate.NewLimiter(rate.Every(c.cfg.RateLimit), 1)
 	for url := range c.queue {
+		c.rateMu.Lock()
+		wait := time.Until(c.retryAfter)
+		c.rateMu.Unlock()
+		if wait > 0 {
+			time.Sleep(wait)
+			limiter.Reserve()
+		}
 		limiter.Wait(context.Background())
-		c.process(url)
+		result := c.process(workerId, url, client)
+		if result == resultRateLimited {
+			consecFails++
+			if consecFails >= 10 {
+				log.Printf("[INFO] Worker-%d switching to rotating proxy after 10 consecutive failures\n", workerId)
+				client = auth.NewClient(c.jar, c.cfg.RotatingProxyURL)
+				consecFails = 0
+			}
+		} else {
+			consecFails = 0
+		}
 		c.inFlight.Add(-1)
 		metrics.QueueSize.Set(float64(c.inFlight.Load()))
 	}
@@ -310,11 +332,11 @@ func (c *Crawler) Run(url string) {
 	go c.drainOverflow(ctx)
 	go c.idleMonitor(ctx, url)
 	for i := 0; i < c.cfg.Workers; i++ {
-		go func(workerId int) {
-			offset := time.Duration(workerId) * c.cfg.RateLimit / time.Duration(c.cfg.Workers)
-			time.Sleep(offset)
-			c.worker()
-		}(i)
+		proxyURL := ""
+		if i < len(c.cfg.StaticProxyURLs) {
+			proxyURL = c.cfg.StaticProxyURLs[i]
+		}
+		go c.worker(i, proxyURL)
 	}
 	c.enqueue(url)
 	<-c.stopChan
@@ -341,17 +363,23 @@ func (c *Crawler) Seed(path string) {
 }
 
 func (c *Crawler) Login() error {
-	return c.client.Login(c.cfg.LoginURL, c.cfg.Username, c.cfg.Password)
+	client := auth.NewClient(c.jar, "")
+	return client.Login(c.cfg.LoginURL, c.cfg.Username, c.cfg.Password)
 }
 
 // --- test only ---
 
-func (c *Crawler) workerTest() {
+func (c *Crawler) workerTest(workerId int) {
+	proxyURL := ""
+	if workerId < len(c.cfg.StaticProxyURLs) {
+		proxyURL = c.cfg.StaticProxyURLs[workerId]
+	}
+	client := auth.NewClient(c.jar, proxyURL)
 	limiter := rate.NewLimiter(rate.Every(c.cfg.RateLimit), 1)
 	for url := range c.queue {
 		if c.Count() < maxTestVideos {
 			limiter.Wait(context.Background())
-			c.process(url)
+			c.process(workerId, url, client)
 		}
 		c.inFlight.Add(-1)
 		metrics.QueueSize.Set(float64(c.inFlight.Load()))
@@ -366,7 +394,7 @@ func (c *Crawler) RunTest(url string) {
 		go func(workerId int) {
 			offset := time.Duration(workerId) * c.cfg.RateLimit / time.Duration(c.cfg.Workers)
 			time.Sleep(offset)
-			c.workerTest()
+			c.workerTest(workerId)
 		}(i)
 	}
 	c.enqueue(url)
@@ -392,4 +420,10 @@ func (c *Crawler) SaveTest() error {
 	enc := json.NewEncoder(f)
 	enc.SetIndent("", "  ")
 	return enc.Encode(targets)
+}
+
+func (c *Crawler) InitTest() {
+	ctx := context.Background()
+	c.redis.FlushDB(ctx)
+	log.Println("[INFO] Init test completed: Redis cleared")
 }

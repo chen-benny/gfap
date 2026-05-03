@@ -11,11 +11,26 @@ type Client struct {
 	*http.Client
 }
 
-func NewClient() *Client {
-	jar, _ := cookiejar.New(nil)
-	return &Client{
-		Client: &http.Client{Jar: jar},
+// NewClient creates an HTTP client with an optional proxy
+// All clients share the same cookie jar passed in, one login for many proxies
+func NewClient(jar http.CookieJar, proxyURL string) *Client {
+	transport := &http.Transport{}
+	if proxyURL != "" {
+		parsed, _ := url.Parse(proxyURL)
+		transport.Proxy = http.ProxyURL(parsed)
 	}
+	return &Client{
+		Client: &http.Client{
+			Jar:       jar,
+			Transport: transport,
+		},
+	}
+}
+
+// NewJar creates a shared cookie jar for all workers
+func NewJar() http.CookieJar {
+	jar, _ := cookiejar.New(nil)
+	return jar
 }
 
 func (c *Client) Get(url string) (*http.Response, error) {
