@@ -635,3 +635,118 @@
 2026/05/03 10:39:16 [DEBUG] url=https://www.vidlii.com/watch?v=-MmWHx6awwa title=HERMIT GARDEN 2021 date=Jun 14, 2021 dur=146
 2026/05/03 10:39:17 [INFO] Test finished - 101 videos, 1 targets
 2026/05/03 10:39:17 Visited 101 videos, target 1
+2026/05/03 20:33:48 [INFO] Logged in successfully
+2026/05/03 20:33:48 [INFO] Running in test mode
+2026/05/03 20:33:48 [INFO] Init test completed: Redis cleared
+2026/05/03 20:34:07 [DEBUG] workerId=11 url=https://www.vidlii.com/watch?v=K5u6i67Cg3e title=アイドルマスター　急降下爆撃～STUKA Lied2008～　スツーカリート.flv date=Dec 25, 2017 dur=206
+2026/05/03 20:34:07 [FOUND] 1, https://www.vidlii.com/watch?v=K5u6i67Cg3e - アイドルマスター　急降下爆撃～STUKA Lied2008～　スツーカリート.flv
+2026/05/03 20:34:09 [DEBUG] workerId=19 url=https://www.vidlii.com/watch?v=njl65hsfsLx title=myon myon date=Dec 21, 2017 dur=372
+2026/05/03 20:34:11 [DEBUG] workerId=7 url=https://www.vidlii.com/watch?v=9HtMVesj9Pw title=mootykins date=Dec 14, 2017 dur=162
+2026/05/03 20:34:11 [DEBUG] workerId=4 url=https://www.vidlii.com/watch?v=gokalOcgTji title=HIGH TENSION JAPANESE GOBLIN date=Dec 21, 2017 dur=255
+2026/05/03 20:34:11 [DEBUG] workerId=9 url=https://www.vidlii.com/watch?v=vC6R7hOEamy title=Spraying my deodorant directly east date=Dec 21, 2017 dur=62
+2026/05/03 20:34:11 [DEBUG] workerId=6 url=https://www.vidlii.com/watch?v=c4BFXphOWvI title=Miko Miko Nurse date=Dec 14, 2017 dur=39
+2026/05/03 20:34:12 [DEBUG] workerId=5 url=https://www.vidlii.com/watch?v=jCg005EDdR7 title=The 4chan 10th Anniversary Panel Intro date=Dec 14, 2017 dur=149
+2026/05/03 20:34:12 [DEBUG] workerId=11 url=https://www.vidlii.com/watch?v=QY0FU5BH0jC title=LONGCAT BE LOOOOOOONG date=Dec 14, 2017 dur=94
+2026/05/03 20:34:13 [DEBUG] workerId=15 url=https://www.vidlii.com/watch?v=lfsnSgj58PF title=twin wrong god of super waha~ date=Dec 12, 2017 dur=129
+2026/05/03 20:34:13 [DEBUG] workerId=17 url=https://www.vidlii.com/watch?v=AxQxmhWdO0u title=Leek Spin date=Aug 24, 2017 dur=132
+2026/05/03 20:34:14 [DEBUG] workerId=19 url=https://www.vidlii.com/watch?v=3uZiZ3Ykqyc title=Freedom Planet: Sky Battalion (Sega Genesis Remix) date=Dec 03, 2017 dur=251
+2026/05/03 20:35:03 [DEBUG] workerId=16 url=https://www.vidlii.com/watch?v=Zkg66D449Wh title=meg that was awesome date=May 03, 2026 dur=27
+2026/05/03 20:35:04 [DEBUG] workerId=18 url=https://www.vidlii.com/watch?v=FPYbNkjeE9k title=Every Canceled MCU Film - FactsAbout Redux date=Mar 15, 2025 dur=508
+2026/05/03 20:35:07 [DEBUG] workerId=5 url=https://www.vidlii.com/watch?v=dshJS3K5RtV title=(LOUD/JUMPSCARE/CUSS WORDS/REUPLOADED/FIXED) Microsoft Sam's PC gets downgraded date=May 04, 2026 dur=245
+2026/05/03 20:35:07 [DEBUG] workerId=2 url=https://www.vidlii.com/watch?v=FJTUVQJRJUu title=History of the Internet (Part 1) - Before The World Wide Web date=Nov 13, 2018 dur=322
+2026/05/03 20:35:07 [DEBUG] workerId=1 url=https://www.vidlii.com/watch?v=83Xjkyfo2w5 title=Critica a los Hackers de Discord - Loquendo date=May 03, 2026 dur=290
+2026/05/03 20:35:12 [DEBUG] workerId=6 url=https://www.vidlii.com/watch?v=GEmGFRXzlij title=minecraft weird item bug beta 1.6 date=May 01, 2026 dur=80
+2026/05/03 20:35:12 [DEBUG] workerId=2 url=https://www.vidlii.com/watch?v=iEpBQFEC-Ex title=Hello Welcome to my Channel!!!11!!1!! date=May 03, 2026 dur=76
+2026/05/03 20:35:12 [DEBUG] workerId=10 url=https://www.vidlii.com/watch?v=JNARfu_HOcA title=my awesome murder miners maps date=May 03, 2026 dur=1377
+2026/05/03 20:35:12 [DEBUG] workerId=3 url=https://www.vidlii.com/watch?v=8MvvTsNPneA title=Cat O’ Nine Ails (1948) (Soundtrack Lost) date=Apr 27, 2026 dur=437
+2026/05/03 20:35:43 [DEBUG] workerId=18 url=https://www.vidlii.com/watch?v=DpKTRtPgpdS title=I flew just for Buc-ee's date=Apr 16, 2026 dur=56
+2026/05/03 20:35:43 [DEBUG] workerId=15 url=https://www.vidlii.com/watch?v=IrCp-ID5XUF title=TEMUJIN- MUNDANE ABOMINATION: EPISODE 1 [Pilot] date=May 03, 2026 dur=655
+2026/05/03 20:35:47 [DEBUG] workerId=4 url=https://www.vidlii.com/watch?v=96qnrxPChrp title=PSP after 2 month's || is it worth it in 2026? date=Apr 16, 2026 dur=409
+2026/05/03 20:35:47 [DEBUG] workerId=9 url=https://www.vidlii.com/watch?v=0P8r51iMCQz title=DOWN BUT NOT OUT!! - A.T. Andrei Thomas Returns to Vidlii (HD) 60fps date=Apr 25, 2026 dur=41
+2026/05/03 20:35:48 [DEBUG] workerId=3 url=https://www.vidlii.com/watch?v=-WwQR59V60e title=Super Mario Land 2 is still great date=Apr 02, 2026 dur=1102
+2026/05/03 20:35:48 [DEBUG] workerId=13 url=https://www.vidlii.com/watch?v=djNsjLw9TUr title=Introducing: VidLii Coins (April Fools) date=Mar 31, 2026 dur=53
+2026/05/03 20:35:48 [DEBUG] workerId=6 url=https://www.vidlii.com/watch?v=rl_Zr8liGW2 title=BitView Became WHAT? date=Apr 08, 2026 dur=595
+2026/05/03 20:35:48 [DEBUG] workerId=16 url=https://www.vidlii.com/watch?v=eFzTol29boD title=Ed Edd n Eddy-Episode 4-Dawn of the Eds date=May 03, 2026 dur=679
+2026/05/03 20:35:49 [DEBUG] workerId=15 url=https://www.vidlii.com/watch?v=YDlLwLhikWN title=Heart Monitor - The Nobodies date=Mar 07, 2026 dur=159
+2026/05/03 20:35:51 [DEBUG] workerId=6 url=https://www.vidlii.com/watch?v=EddcEN6_tXW title=my fish :) date=Apr 30, 2026 dur=19
+2026/05/03 20:35:52 [DEBUG] workerId=5 url=https://www.vidlii.com/watch?v=SUrk9kbISve title=核の箱 date=May 02, 2026 dur=94
+2026/05/03 20:35:52 [DEBUG] workerId=11 url=https://www.vidlii.com/watch?v=5l0nC0VLiUS title=undertaker & michael myers vs the ghylantros date=May 03, 2026 dur=370
+2026/05/03 20:35:54 [DEBUG] workerId=1 url=https://www.vidlii.com/watch?v=hv6a_-xMYoc title=Andrew Ambrose - Fresh Beans (Kerokoid's Chili Remix!) date=May 03, 2026 dur=232
+2026/05/03 20:35:56 [DEBUG] workerId=2 url=https://www.vidlii.com/watch?v=YlXWnu9tADA title=polska to kontynent date=May 01, 2026 dur=10
+2026/05/03 20:35:57 [DEBUG] workerId=10 url=https://www.vidlii.com/watch?v=6_1UqdfF07K title=What is Flamingo? date=May 03, 2026 dur=87
+2026/05/03 20:35:58 [DEBUG] workerId=13 url=https://www.vidlii.com/watch?v=nz3FuXe3yPg title=it my birthday yay :D date=Jun 03, 2025 dur=37
+2026/05/03 20:36:17 [DEBUG] workerId=8 url=https://www.vidlii.com/watch?v=UsZRj7VZIjt title=Critica SUPER destructiva a Alesonic99 (virgen incel pedofilo funado) date=May 03, 2026 dur=322
+2026/05/03 20:36:19 [DEBUG] workerId=9 url=https://www.vidlii.com/watch?v=oRv_kqeBKZ8 title=Cran Grape Juice date=May 03, 2026 dur=82
+2026/05/03 20:36:20 [DEBUG] workerId=18 url=https://www.vidlii.com/watch?v=FS_mUUZ_rsm title=why vidlii is the best ever date=May 03, 2026 dur=26
+2026/05/03 20:36:22 [DEBUG] workerId=11 url=https://www.vidlii.com/watch?v=S9KTGSS_vaq title=Andrew WK - Ready to die midi date=May 03, 2026 dur=180
+2026/05/03 20:36:22 [DEBUG] workerId=19 url=https://www.vidlii.com/watch?v=z9QX3zYG9s5 title=The weirdest FNAF cartoon series I have seen - Reaction N°12 date=May 03, 2026 dur=1880
+2026/05/03 20:36:22 [DEBUG] workerId=4 url=https://www.vidlii.com/watch?v=5xwnxp6fE4o title=PREGUNTAS Y RESPUESTAS #1 date=May 03, 2026 dur=178
+2026/05/03 20:36:22 [DEBUG] workerId=12 url=https://www.vidlii.com/watch?v=wGyJNTJ7SKJ title=convocatoria Al Collab Cinematica videojueguil date=May 03, 2026 dur=23
+2026/05/03 20:36:23 [DEBUG] workerId=13 url=https://www.vidlii.com/watch?v=i4mDrPB06u4 title=Free My Chica - She Did Nothing Wrong - Intro date=May 03, 2026 dur=47
+2026/05/03 20:36:24 [DEBUG] workerId=5 url=https://www.vidlii.com/watch?v=Tw90CbVvuiD title=YouTube In Real Life date=May 03, 2026 dur=166
+2026/05/03 20:36:26 [DEBUG] workerId=19 url=https://www.vidlii.com/watch?v=kjoOo7hS8jX title=Madoka.Magica - El.Cajón ☆ AMV date=May 03, 2026 dur=267
+2026/05/03 20:36:27 [DEBUG] workerId=4 url=https://www.vidlii.com/watch?v=D9p7Bg6PYbw title=bruh date=May 03, 2026 dur=12
+2026/05/03 20:36:28 [DEBUG] workerId=13 url=https://www.vidlii.com/watch?v=6mgsS9-y6TG title=VidLii Unseen:BUCEE DEEZ NUTZ date=May 03, 2026 dur=29
+2026/05/03 20:39:25 [DEBUG] workerId=18 url=https://www.vidlii.com/watch?v=VuCI1O8HYiD title=Happy99 Windows Worm date=Mar 20, 2022 dur=44
+2026/05/03 20:39:25 [DEBUG] workerId=10 url=https://www.vidlii.com/watch?v=Eb79ez-9Td7 title=Break your Cart - TinyMonkeyT (Unofficial Music Video) date=May 02, 2026 dur=202
+2026/05/03 20:39:27 [DEBUG] workerId=7 url=https://www.vidlii.com/watch?v=aRSY-nrl8Do title=This video is still converting! date=May 04, 2026 dur=39
+2026/05/03 20:39:29 [DEBUG] workerId=1 url=https://www.vidlii.com/watch?v=j2qONtPWUGi title=xen0m3ter exposed! (xenostein files) (read desc) date=Apr 30, 2026 dur=850
+2026/05/03 20:39:31 [DEBUG] workerId=1 url=https://www.vidlii.com/watch?v=rNJNEnZ8tTZ title=Ed Edd n Eddy-Episode 1-The Ed-touchables date=May 03, 2026 dur=682
+2026/05/03 20:39:34 [DEBUG] workerId=17 url=https://www.vidlii.com/watch?v=Z-YznJd7yr6 title=Revista Quatro Rodas - Junho De 2007, Nº 566 date=May 02, 2026 dur=188
+2026/05/03 20:39:37 [DEBUG] workerId=5 url=https://www.vidlii.com/watch?v=Bf61Zea4KyD title=Kerokoid - Platonic Water Aquadynamics date=May 04, 2026 dur=603
+2026/05/03 20:39:38 [DEBUG] workerId=15 url=https://www.vidlii.com/watch?v=LDFsWlGECSx title=The Crew - E3 2013 - Announcement Trailer date=May 04, 2026 dur=198
+2026/05/03 20:39:38 [DEBUG] workerId=14 url=https://www.vidlii.com/watch?v=ZImZVrQmoou title=undertaker & michael myers vs the ghylantros date=May 03, 2026 dur=370
+2026/05/03 20:39:43 [DEBUG] workerId=6 url=https://www.vidlii.com/watch?v=sPqB80mN2-m title=Tf2 will never be a “Dead Game” date=Jul 21, 2024 dur=2054
+2026/05/03 20:39:56 [DEBUG] workerId=8 url=https://www.vidlii.com/watch?v=WeqGjmhTnjv title=Not Ashamed date=Dec 13, 2017 dur=30
+2026/05/03 20:39:57 [DEBUG] workerId=12 url=https://www.vidlii.com/watch?v=KO8_LEHaDUA title=dedicated to tha boyz back home date=Dec 13, 2017 dur=23
+2026/05/03 20:41:38 [DEBUG] workerId=10 url=https://www.vidlii.com/watch?v=U_9vsGds28I title=4chan 4evar date=Dec 12, 2017 dur=69
+2026/05/03 20:41:54 [DEBUG] workerId=0 url=https://www.vidlii.com/watch?v=GCn_hEXv9XP title=Magia Record, Some Early 2019 Gameplay #1 date=Jul 16, 2019 dur=212
+2026/05/03 20:41:57 [DEBUG] workerId=3 url=https://www.vidlii.com/watch?v=74ds2KkDrjD title=Josip On Deck - Bruce Jenner date=May 11, 2019 dur=227
+2026/05/03 20:41:57 [DEBUG] workerId=8 url=https://www.vidlii.com/watch?v=Zt_Oqa6OcTz title=Metro Zu - Kingdom Hearts (HD Fan Vid) date=Jun 22, 2019 dur=264
+2026/05/03 20:41:58 [DEBUG] workerId=14 url=https://www.vidlii.com/watch?v=qqlIkal3ZtI title=[AMV] Sailor Moon, LIKE A NIGGR @ Jacobs Jewlery (RubenSlikk) date=Mar 26, 2019 dur=243
+2026/05/03 20:41:58 [DEBUG] workerId=9 url=https://www.vidlii.com/watch?v=WHwRwHaJLt- title=higu poni.swf date=Mar 12, 2019 dur=91
+2026/05/03 20:41:58 [DEBUG] workerId=15 url=https://www.vidlii.com/watch?v=qU3d9MELazx title=Ruben Slikk - Elegant Living date=Mar 26, 2019 dur=141
+2026/05/03 20:41:59 [DEBUG] workerId=17 url=https://www.vidlii.com/watch?v=K_VdZchdqdW title=Japan Break Industries.swf date=Mar 12, 2019 dur=214
+2026/05/03 20:41:59 [DEBUG] workerId=18 url=https://www.vidlii.com/watch?v=tm9bqIcWWkR title=Xiao Mei Mei.swf date=Mar 12, 2019 dur=252
+2026/05/03 20:42:01 [DEBUG] workerId=6 url=https://www.vidlii.com/watch?v=iZxeH3eVG2P title=I TURNED MYSELF INTO A NIGGER MORTY!!! date=Feb 01, 2018 dur=56
+2026/05/03 20:42:02 [DEBUG] workerId=19 url=https://www.vidlii.com/watch?v=9us0rXKQ-Sv title=Youtube Rick Roll's the internet April 1st 2008 date=Apr 02, 2019 dur=122
+2026/05/03 20:42:02 [DEBUG] workerId=3 url=https://www.vidlii.com/watch?v=NuZkGJabah3 title=[AMV] ruben slikk i get jaw date=Dec 10, 2017 dur=197
+2026/05/03 20:42:02 [DEBUG] workerId=8 url=https://www.vidlii.com/watch?v=WV6FN9p6IR7 title=SHITTY OHIO MAP date=Mar 25, 2019 dur=209
+2026/05/03 20:42:03 [DEBUG] workerId=4 url=https://www.vidlii.com/watch?v=i7bJaKJ7Zzz title=[AMV] black kray dont hit mah nextel date=Dec 10, 2017 dur=115
+2026/05/03 20:42:03 [DEBUG] workerId=15 url=https://www.vidlii.com/watch?v=c1HpARB3aMI title=[AMV] ruben slikk young fuckgod date=Dec 11, 2017 dur=195
+2026/05/03 20:42:03 [DEBUG] workerId=13 url=https://www.vidlii.com/watch?v=6MDT92psirV title=Bongo cat date=Oct 23, 2018 dur=86
+2026/05/03 20:42:04 [DEBUG] workerId=18 url=https://www.vidlii.com/watch?v=5z6AnQ1vDOM title=An expert weighs in date=Mar 09, 2020 dur=86
+2026/05/03 20:42:04 [DEBUG] workerId=10 url=https://www.vidlii.com/watch?v=iSOHs5j0mEY title=21 yo mama so gay jokes [100 sub special] date=Jan 21, 2019 dur=252
+2026/05/03 20:42:57 [DEBUG] workerId=6 url=https://www.vidlii.com/watch?v=zqOubHo9Lk_ title=WELCOME TO A PLACE FOR NICE THINGS date=Dec 11, 2017 dur=63
+2026/05/03 20:42:58 [DEBUG] workerId=14 url=https://www.vidlii.com/watch?v=A-CN4UgB_8w title=HOME GAME 3 2021 trailer date=Oct 22, 2021 dur=162
+2026/05/03 20:42:58 [DEBUG] workerId=12 url=https://www.vidlii.com/watch?v=bHTbZB53hfq title=HOME GAME 3 2022 trailer date=Aug 07, 2022 dur=593
+2026/05/03 20:42:58 [DEBUG] workerId=4 url=https://www.vidlii.com/watch?v=8YlmmjYxF1P title=[INACCESSIBLE] date=Feb 02, 2022 dur=91
+2026/05/03 20:42:58 [DEBUG] workerId=10 url=https://www.vidlii.com/watch?v=BZ7JRAd2QuP title=LEWIS date=Sep 29, 2021 dur=18
+2026/05/03 20:42:59 [DEBUG] workerId=0 url=https://www.vidlii.com/watch?v=LVe6Rfdv288 title=[SPRING LOOP] (volume warning?) date=Apr 10, 2021 dur=73
+2026/05/03 20:42:59 [DEBUG] workerId=5 url=https://www.vidlii.com/watch?v=-MmWHx6awwa title=HERMIT GARDEN 2021 date=Jun 14, 2021 dur=146
+2026/05/03 20:43:01 [DEBUG] workerId=7 url=https://www.vidlii.com/watch?v=kCwoxjWjooc title=[INACCESSIBLE] date=Jan 11, 2021 dur=179
+2026/05/03 20:43:02 [DEBUG] workerId=2 url=https://www.vidlii.com/watch?v=wCLGNdij--J title=[A DANK REMIX] date=Feb 17, 2021 dur=427
+2026/05/03 20:43:18 [DEBUG] workerId=4 url=https://www.vidlii.com/watch?v=smCHOyl_P7m title=this is nice board (???) date=Jul 28, 2021 dur=8
+2026/05/03 20:43:18 [DEBUG] workerId=9 url=https://www.vidlii.com/watch?v=jh2nM_VBK6e title=random flash animations date=Mar 11, 2023 dur=51
+2026/05/03 20:43:18 [DEBUG] workerId=17 url=https://www.vidlii.com/watch?v=z_BDFTLo9iY title=snacks_loudenough date=Aug 13, 2022 dur=30
+2026/05/03 20:43:19 [DEBUG] workerId=0 url=https://www.vidlii.com/watch?v=GsQbWWvQzPu title=Mootykins*4chan* date=Oct 11, 2021 dur=398
+2026/05/03 20:43:21 [DEBUG] workerId=2 url=https://www.vidlii.com/watch?v=PVGr7yKVD82 title=4chan Valetine's Day 2010 date=Jul 21, 2023 dur=415
+2026/05/03 20:43:22 [DEBUG] workerId=7 url=https://www.vidlii.com/watch?v=7CTxB-_ODX1 title=loading 4chan.swf date=Jun 05, 2022 dur=103
+2026/05/03 20:43:42 [DEBUG] workerId=14 url=https://www.vidlii.com/watch?v=TZrP_UcIItl title=family guy despacito date=Jan 31, 2018 dur=41
+2026/05/03 20:43:43 [DEBUG] workerId=17 url=https://www.vidlii.com/watch?v=BLlLXJJbBiZ title=nintendo u-tube date=Jan 01, 2018 dur=22
+2026/05/03 20:43:44 [DEBUG] workerId=18 url=https://www.vidlii.com/watch?v=XWvk4ROqy0b title=pengas & pingas AMV - EVERYTIME WE TOUCH date=Dec 30, 2017 dur=76
+2026/05/03 20:43:46 [DEBUG] workerId=2 url=https://www.vidlii.com/watch?v=KRfcAduAjBp title=mmmdog date=Dec 27, 2017 dur=32
+2026/05/03 20:43:46 [DEBUG] workerId=19 url=https://www.vidlii.com/watch?v=bRitlHT7Mxd title=The Ass Was Fat date=Dec 28, 2017 dur=62
+2026/05/03 20:43:46 [DEBUG] workerId=8 url=https://www.vidlii.com/watch?v=amuFmTg8DLa title=h date=Dec 26, 2017 dur=0
+2026/05/03 20:43:47 [DEBUG] workerId=7 url=https://www.vidlii.com/watch?v=dstmkGxw9Qp title=Jellyfish - Joining a Fanclub date=Dec 17, 2017 dur=242
+2026/05/03 20:43:47 [DEBUG] workerId=14 url=https://www.vidlii.com/watch?v=CcHiVr4WBqk title=Untitled date=Jun 12, 2019 dur=6
+2026/05/03 20:43:47 [DEBUG] workerId=13 url=https://www.vidlii.com/watch?v=1mpA8hw7t5A title=i got.avi date=Dec 18, 2017 dur=21
+2026/05/03 20:43:48 [DEBUG] workerId=16 url=https://www.vidlii.com/watch?v=35YJ7Ax4Wkm title=i've been poppin ____ man i feel just like a SPONGEstar date=Jun 05, 2019 dur=47
+2026/05/03 20:43:49 [DEBUG] workerId=0 url=https://www.vidlii.com/watch?v=SVFF_vVHly8 title=cool fire trick date=Dec 04, 2018 dur=19
+2026/05/03 20:43:49 [DEBUG] workerId=9 url=https://www.vidlii.com/watch?v=R2bLqYpIIsC title=[COOL&CREATE] Myu - Wriggle Buggle date=Jul 11, 2019 dur=196
+2026/05/03 20:43:49 [DEBUG] workerId=18 url=https://www.vidlii.com/watch?v=_hlQtIC0OGm title=Rapper Soulja Boy Brutally Attacks the President of the United States of America date=Nov 26, 2018 dur=14
+2026/05/03 20:43:51 [DEBUG] workerId=19 url=https://www.vidlii.com/watch?v=5P62gSAjjls title=volvic funny 2 on vhs date=Aug 31, 2018 dur=17
+2026/05/03 20:43:52 [DEBUG] workerId=6 url=https://www.vidlii.com/watch?v=xL2fA5MCoEl title=Chai Kingdom.mp443 date=Mar 10, 2026 dur=97
+2026/05/03 20:43:52 [DEBUG] workerId=3 url=https://www.vidlii.com/watch?v=AGyXwjHm82J title=This is mai life:p date=Jun 21, 2021 dur=88
+2026/05/03 20:43:52 [INFO] Test finished - 109 videos, 1 targets
+2026/05/03 20:43:52 Visited 109 videos, target 1

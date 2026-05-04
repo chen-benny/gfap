@@ -26,7 +26,7 @@ type processResult int
 const (
 	idleTimeout   = time.Minute * 10
 	maxRetries    = 3
-	maxTestVideos = 100 // test mode only
+	maxTestVideos = 50 // test mode only
 )
 
 const (
@@ -129,13 +129,13 @@ func (c *Crawler) process(workerId int, url string, client *auth.Client) process
 			if resp.StatusCode != http.StatusOK {
 				resp.Body.Close()
 				if strings.Contains(url, c.cfg.VideoPattern) {
-					backoff := time.Duration(try) * 30 * time.Second
+					backoff := time.Duration(try) * 60 * time.Second
 					log.Printf("[WARN] Worker-%d: %s returned %d, backing off %s\n", workerId, url, resp.StatusCode, backoff)
 					c.rateMu.Lock()
 					c.retryAfter = time.Now().Add(backoff)
 					c.rateMu.Unlock()
 					time.Sleep(backoff)
-					continue
+					return resultRateLimited
 				}
 				return resultSkipped
 			}
@@ -228,6 +228,12 @@ func (c *Crawler) process(workerId int, url string, client *auth.Client) process
 			href = c.cfg.BaseUrl + href
 		}
 		if strings.HasPrefix(href, c.cfg.BaseUrl) {
+			if strings.Contains(href, c.cfg.VideoPattern) {
+				idx := strings.Index(href, c.cfg.VideoPattern)
+				if href[idx+len(c.cfg.VideoPattern):] == "" { // case: "watch?v=", just skip if empty videoId
+					return
+				}
+			}
 			c.enqueue(href)
 		}
 	})
