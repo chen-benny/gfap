@@ -10,8 +10,8 @@ const (
 	bloomKey    = "crawler:bloom"
 	overflowKey = "crawler:overflow"
 
-	bloomCapacity  = 100_000_000 // ~120MB under 0.1% FPR
-	bloomErrorRate = 0.001
+	bloomCapacity  = 1_000_000_000 // 3GB with 0.001% FPR
+	bloomErrorRate = 0.00001
 )
 
 type Redis struct {
@@ -30,9 +30,14 @@ func NewRedis(addr string) (*Redis, error) {
 func (r *Redis) BloomInit(ctx context.Context) error {
 	err := r.client.BFReserve(ctx, bloomKey, bloomErrorRate, bloomCapacity).Err()
 	if err != nil && err.Error() == "ERR item exists" {
-		return nil
+		// filter exists but still ensure AOF is on
+		return r.client.ConfigSet(ctx, "appendonly", "yes").Err()
 	}
-	return err
+	if err != nil {
+		return err
+	}
+	// enable AOF persistence for Bloom
+	return r.client.ConfigSet(ctx, "appendonly", "yes").Err()
 }
 
 // BloomAdd adds url to the Bloom filter
@@ -64,4 +69,8 @@ func (r *Redis) FlushDB(ctx context.Context) error {
 
 func (r *Redis) Close() {
 	r.client.Close()
+}
+
+func (r *Redis) BloomExists(ctx context.Context, url string) (bool, error) {
+	return r.client.BFExists(ctx, bloomKey, url).Result()
 }

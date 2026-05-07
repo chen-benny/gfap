@@ -80,6 +80,19 @@ func (c *Crawler) TargetCount() int {
 }
 
 func (c *Crawler) enqueue(url string) {
+	url = c.canonicalize(url)
+	if url == "" {
+		return
+	}
+
+	ctx := context.Background()
+	// check bloom before enqueuing
+	if url != c.cfg.BaseUrl {
+		exists, err := c.redis.BloomExists(ctx, url)
+		if err == nil && exists {
+			return // already seen
+		}
+	}
 	c.inFlight.Add(1)
 	metrics.QueueSize.Set(float64(c.inFlight.Load()))
 	select {
@@ -115,6 +128,11 @@ func (c *Crawler) drainOverflow(ctx context.Context) {
 }
 
 func (c *Crawler) process(workerId int, url string, client *auth.Client) processResult {
+	url = c.canonicalize(url)
+	if url == "" {
+		return resultSkipped
+	}
+
 	ctx := context.Background()
 	var err error // err is re-used
 
@@ -186,13 +204,6 @@ func (c *Crawler) process(workerId int, url string, client *auth.Client) process
 	metrics.PagesProcessed.Inc()
 
 	if strings.Contains(url, c.cfg.VideoPattern) {
-		idx := strings.Index(url, c.cfg.VideoPattern)
-		videoID := url[idx+len(c.cfg.VideoPattern):]
-		if videoID == "" {
-			return resultSkipped
-		}
-		url = c.cfg.BaseUrl + url[idx:]
-
 		c.mu.Lock()
 		c.count++
 		c.mu.Unlock()
@@ -219,7 +230,9 @@ func (c *Crawler) process(workerId int, url string, client *auth.Client) process
 			metrics.TargetsFound.Inc()
 		}
 
-		c.mongo.Upsert(ctx, v)
+		if err := c.mongo.Upsert(ctx, v); err != nil {
+			log.Printf("[ERROR] Upsert failed for %s: %v\n", url, err)
+		}
 	}
 
 	doc.Find("a[href]").Each(func(_ int, s *goquery.Selection) {
@@ -227,15 +240,8 @@ func (c *Crawler) process(workerId int, url string, client *auth.Client) process
 		if strings.HasPrefix(href, "/") && !strings.HasPrefix(href, "//") {
 			href = c.cfg.BaseUrl + href
 		}
-		if strings.HasPrefix(href, c.cfg.BaseUrl) {
-			if strings.Contains(href, c.cfg.VideoPattern) {
-				idx := strings.Index(href, c.cfg.VideoPattern)
-				if href[idx+len(c.cfg.VideoPattern):] == "" { // case: "watch?v=", just skip if empty videoId
-					return
-				}
-			}
-			c.enqueue(href)
-		}
+
+		c.enqueue(href)
 	})
 
 	return resultOK
@@ -277,6 +283,34 @@ func (c *Crawler) Clear() {
 	c.mongo.Drop(ctx)
 	c.redis.FlushDB(ctx)
 	log.Println("[INFO] Cleared MongoDB and Redis")
+}
+
+// canonicalize returns the canonical form of a vidlli url, or "" to skip
+func (c *Crawler) canonicalize(raw string) string {
+	// strip fragment
+	if i := strings.Index(raw, "#"); i >= 0 {
+		raw = raw[:i]
+	}
+
+	// should be on the same host
+	if !strings.HasPrefix(raw, c.cfg.BaseUrl) {
+		return ""
+	}
+
+	// video page: keep only ?=v<id>
+	if idx := strings.Index(raw, c.cfg.VideoPattern); idx >= 0 {
+		rest := raw[idx+len(c.cfg.VideoPattern):]
+		if rest == "" {
+			return ""
+		}
+		if amp := strings.Index(rest, "&"); amp >= 0 {
+			rest = rest[:amp]
+		}
+		return c.cfg.BaseUrl + c.cfg.VideoPattern + rest
+	}
+
+	// non-video page
+	return strings.TrimRight(raw, "/")
 }
 
 // --- production only ---
