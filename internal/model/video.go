@@ -5,8 +5,8 @@ import (
 	"unicode"
 )
 
-// DurationThreshold is the min video length in seconds to satisfy 179s >= 3 minutes
-const DurationThreshold = 3*60 - 1
+// DurationThreshold is the min video length in seconds to satisfy >= 10 mins
+const DurationThreshold = 10*60 - 1
 
 type Video struct {
 	URL      string `bson:"_id"`
@@ -32,7 +32,7 @@ func (v *Video) Match(cutoffDate time.Time) {
 	v.MatchDuration = v.Duration > DurationThreshold
 	v.HasCJKChar = hasCJK(v.Title)
 	v.HasNonEnglishChar = hasNonLatin(v.Title)
-	v.IsTarget = v.MatchDate && v.MatchDuration && v.HasCJKChar
+	v.IsTarget = v.MatchDate && v.MatchDuration && (v.HasCJKChar || v.HasNonEnglishChar)
 }
 
 func (v *Video) matchesCutoffDate(cutoffDate time.Time) bool {
